@@ -9,6 +9,7 @@ GEM
       et-orbi (~> 1.1, >= 1.1.8)
       raabro (~> 1.1)
     holiday_japan (1.4.3)
+    kgio (2.11.3)
     multi_json (1.14.1)
     mustermann (1.1.1)
       ruby2_keywords (~> 0.0.1)
@@ -16,6 +17,7 @@ GEM
     rack (2.1.2)
     rack-protection (2.0.8.1)
       rack
+    raindrops (0.19.1)
     ruby2_keywords (0.0.2)
     rufus-scheduler (3.6.0)
       fugit (~> 1.1, >= 1.1.6)
@@ -34,6 +36,9 @@ GEM
     tilt (2.0.10)
     tzinfo (2.0.1)
       concurrent-ruby (~> 1.0)
+    unicorn (5.5.3)
+      kgio (~> 2.6)
+      raindrops (~> 0.7)
 
 PLATFORMS
   ruby
@@ -43,6 +48,7 @@ DEPENDENCIES
   rufus-scheduler
   sinatra
   sinatra-contrib
+  unicorn
 
 BUNDLED WITH
    2.1.2
