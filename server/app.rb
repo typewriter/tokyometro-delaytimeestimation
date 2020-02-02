@@ -2,6 +2,7 @@
 
 require "sinatra"
 require "sinatra/json"
+require "sinatra/namespace"
 
 require "holiday_japan"
 
@@ -81,55 +82,57 @@ def trains(id)
   end
 end
 
-get '/railways' do
-  json railways
-end
-
-get '/trains/:id' do
-  if !railways.any? { |railway| railway.dig("railway", "id") == params[:id] }
-    halt 400
+namespace '/metro_delay_now/api/v1' do
+  get '/railways' do
+    json railways
   end
 
-  date = Time.now.to_date - (Time.now.hour < 4 ? 1 : 0)
-  day_of = (date.saturday? || date.sunday? || HolidayJapan.check(date)) ? "saturdaysHolidays" : "weekdays"
-  timetables = timetables(params[:id])
-  trains = trains(params[:id])
+  get '/trains/:id' do
+    if !railways.any? { |railway| railway.dig("railway", "id") == params[:id] }
+      halt 400
+    end
 
-  out_trains = trains.map { |train|
-    {
-      id: train["owl:sameAs"],
-      trainType: train["odpt:trainType"],
-      starting: train["odpt:startingStation"],
-      terminal: train["odpt:terminalStation"],
-      direction: train["odpt:railDirection"],
-      current: train["odpt:fromStation"],
-      next: train["odpt:toStation"],
-      # timetable: timetables[day_of][train["owl:sameAs"]]
-    }.tap { |out_train|
-      if timetable = timetables.dig(day_of, train["owl:sameAs"])
-        # 発車済の場合は次駅時間、未発車の場合は当駅時間で
-        current_time = train["dc:date"]
-        planned_time = timetable.dig("stops", out_train[:next] || out_train[:current])
-        if !current_time || !planned_time
-          out_train[:delay] = nil
-          break out_train
+    date = Time.now.to_date - (Time.now.hour < 4 ? 1 : 0)
+    day_of = (date.saturday? || date.sunday? || HolidayJapan.check(date)) ? "saturdaysHolidays" : "weekdays"
+    timetables = timetables(params[:id])
+    trains = trains(params[:id])
+
+    out_trains = trains.map { |train|
+      {
+        id: train["owl:sameAs"],
+        trainType: train["odpt:trainType"],
+        starting: train["odpt:startingStation"],
+        terminal: train["odpt:terminalStation"],
+        direction: train["odpt:railDirection"],
+        current: train["odpt:fromStation"],
+        next: train["odpt:toStation"],
+        # timetable: timetables[day_of][train["owl:sameAs"]]
+      }.tap { |out_train|
+        if timetable = timetables.dig(day_of, train["owl:sameAs"])
+          # 発車済の場合は次駅時間、未発車の場合は当駅時間で
+          current_time = train["dc:date"]
+          planned_time = timetable.dig("stops", out_train[:next] || out_train[:current])
+          if !current_time || !planned_time
+            out_train[:delay] = nil
+            break out_train
+          end
+
+          current_time = Time.parse(current_time)
+          planned_time = Time.parse(planned_time)
+
+          if current_time - planned_time > 60
+            out_train[:delay] = ((current_time - planned_time) / 60).to_i
+          else
+            out_train[:delay] = 0
+          end
         end
-
-        current_time = Time.parse(current_time)
-        planned_time = Time.parse(planned_time)
-
-        if current_time - planned_time > 60
-          out_train[:delay] = ((current_time - planned_time) / 60).to_i
-        else
-          out_train[:delay] = 0
-        end
-      end
+      }
     }
-  }
 
-  json({ date: trains.dig(0, "dc:date"), trains: out_trains })
-end
+    json({ date: trains.dig(0, "dc:date"), trains: out_trains })
+  end
 
-get '/' do
-  "Hello, world!"
+  get '/' do
+    "Hello, world!"
+  end
 end
