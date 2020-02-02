@@ -8,6 +8,7 @@ GEM
     fugit (1.3.3)
       et-orbi (~> 1.1, >= 1.1.8)
       raabro (~> 1.1)
+    holiday_japan (1.4.3)
     multi_json (1.14.1)
     mustermann (1.1.1)
       ruby2_keywords (~> 0.0.1)
@@ -38,6 +39,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  holiday_japan
   rufus-scheduler
   sinatra
   sinatra-contrib

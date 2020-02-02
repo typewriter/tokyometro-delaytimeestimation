@@ -9,3 +9,4 @@ gem "sinatra-contrib"
 
 gem "rufus-scheduler"
 
+gem "holiday_japan"

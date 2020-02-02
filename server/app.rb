@@ -3,11 +3,14 @@
 require "sinatra"
 require "sinatra/json"
 
+require "holiday_japan"
+
 require "net/http"
 require "uri"
 require "tempfile"
 require "fileutils"
 require "time"
+require "date"
 
 require "rufus-scheduler"
 
@@ -81,7 +84,8 @@ get '/trains/:id' do
     halt 400
   end
 
-  day_of = "saturdaysHolidays"
+  date = Time.now.to_date - (Time.now.hour < 4 ? 1 : 0)
+  day_of = (date.saturday? || date.sunday? || HolidayJapan.check(date)) ? "saturdaysHolidays" : "weekdays"
   timetables = timetables(params[:id])
   trains = trains(params[:id])
 
