@@ -25,7 +25,7 @@ API_ENDPOINT = "https://api.tokyometroapp.jp/api/v2/datapoints"
 CONSUMER_KEY = ENV['CONSUMER_KEY']
 
 def railways
-  JSON.parse(File.read(File.join(DATA_DIR, "railways.json")))
+  JSON.parse(File.read(File.join(DATA_DIR, "railways.json"))).reject { |railway| railway["railway"]["id"] =~ /MarunouchiBranch/ }
 end
 
 def timetables(id)
