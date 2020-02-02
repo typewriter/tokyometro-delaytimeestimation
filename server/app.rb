@@ -20,6 +20,7 @@ require "rufus-scheduler"
 # end
 
 DATA_DIR = File.dirname(__FILE__)
+LATEST_TIME = File.join(DATA_DIR, "latest.time")
 API_ENDPOINT = "https://api.tokyometroapp.jp/api/v2/datapoints"
 CONSUMER_KEY = ENV['CONSUMER_KEY']
 
@@ -52,20 +53,25 @@ def trains(id)
     end
   end
 
-  if is_need_to_update
-    puts "refresh"
+  if is_need_to_update && (!File.exist?(LATEST_TIME) || Time.now - File.mtime(LATEST_TIME) > 15)
+    FileUtils.touch(LATEST_TIME)
+
     body = Net::HTTP.get(URI.parse("#{API_ENDPOINT}?rdf:type=odpt:Train&acl:consumerKey=#{CONSUMER_KEY}"))
-    json = JSON.parse(body)
+    begin
+      json = JSON.parse(body)
 
-    railways.each { |railway|
-      railway_filename = railway["railway"]["id"].gsub(/[\\\/:*?"<>|]/, "-")
-      railway_json = json.select { |train| train["odpt:railway"] == railway["railway"]["id"] }
+      railways.each { |railway|
+        railway_filename = railway["railway"]["id"].gsub(/[\\\/:*?"<>|]/, "-")
+        railway_json = json.select { |train| train["odpt:railway"] == railway["railway"]["id"] }
 
-      tempfile = Tempfile.create
-      tempfile.write JSON.generate(railway_json)
-      tempfile.close
-      FileUtils.mv(tempfile.path, File.join(DATA_DIR, "trains.#{railway_filename}.json"))
-    }
+        tempfile = Tempfile.create
+        tempfile.write JSON.generate(railway_json)
+        tempfile.close
+        FileUtils.mv(tempfile.path, File.join(DATA_DIR, "trains.#{railway_filename}.json"))
+      }
+    rescue
+
+    end
   end
 
   begin
