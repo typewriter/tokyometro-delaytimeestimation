@@ -17,10 +17,10 @@ export class RailwayList extends React.PureComponent<RailwayListProps> {
         { 
           this.props.railways.map((railway) => 
             <div className="mui--pull-left">
-              <div className="mui--divider-left" onClick={ () => this.railwayClick(railway.railway.id) } >&nbsp;{ railway.railway.name }線&nbsp;</div>
+              <div className="mui--divider-left mui--bg-primary-dark mui--z1" style={{ cursor: "pointer" }} onClick={ () => this.railwayClick(railway.railway.id) } >&nbsp;{ railway.railway.name }線&nbsp;</div>
             </div>
           )
-         }
+        }
       </div>
     );
   }

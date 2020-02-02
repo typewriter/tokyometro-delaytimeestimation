@@ -222,7 +222,7 @@ export class RailwayMap extends React.PureComponent<RailwayProps> {
         <div className="mui--appbar-line-height">
           <span className="mui--text-subhead">
             { this.props.railway.name }線
-            { this.props.trainData ? ` (${ Moment().diff(Moment(this.props.trainData.date), 'seconds', false) }秒前の情報)` : ""}
+            { this.props.trainData?.date ? ` (${ Moment().diff(Moment(this.props.trainData.date), 'seconds', false) }秒前の情報)` : ""}
           </span>
         </div>
         { this.props.trainData ? 
