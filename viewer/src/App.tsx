@@ -1,10 +1,12 @@
 import React from 'react';
+import { Cookies } from 'react-cookie';
 import { RailwayList } from './railway/RailwayList';
 import { RailwayProps, TrainData, RailwayMap } from './railway/RailwayMap';
 
 export const API_ENDPOINT = "https://kram.nyamikan.net/metro_delay_now/api/v1"
 
 interface State {
+  cookies: Cookies;
   railways: RailwayProps[];
   selectRailway?: RailwayProps;
   trainData?: TrainData;
@@ -13,7 +15,7 @@ interface State {
 class App extends React.Component<{}, State> {
   constructor(props: {}) {
     super(props);
-    this.state = { railways: [], selectRailway: undefined, trainData: undefined };
+    this.state = { cookies: new Cookies(), railways: [], selectRailway: undefined, trainData: undefined };
   }
   // railway: Railway = {
   //   id: "Ginza",
@@ -64,13 +66,17 @@ class App extends React.Component<{}, State> {
         return response.json();
       }).then((responseJson) => {
         this.setState({ railways: responseJson });
-        this.railwayClick(responseJson[0].railway.id);
+        this.railwayClick(
+          this.state.cookies.get('railway') ||
+          responseJson[0].railway.id
+        );
       });
 
     setInterval(() => this.updateRailway(), 15000);
   }
 
   railwayClick(id: string) {
+    this.state.cookies.set('railway', id, { maxAge: 60*60*24*7, secure: true, sameSite: 'strict' })
     this.setState({ selectRailway: this.state.railways.find(railway => railway.railway.id === id), trainData: undefined });
     fetch(`${API_ENDPOINT}/trains/${id}`)
       .then((response) => {
