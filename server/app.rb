@@ -111,7 +111,7 @@ namespace '/metro_delay_now/api/v1' do
         if timetable = timetables.dig(day_of, train["owl:sameAs"])
           # 発車済の場合は次駅時間、未発車の場合は当駅時間で
           current_time = train["dc:date"]
-          planned_time = timetable.dig("stops", out_train[:next] || out_train[:current])
+          planned_time = timetable.dig("dept_stops", out_train[:next] || out_train[:current])
           if !current_time || !planned_time
             out_train[:delay] = nil
             break out_train
@@ -122,6 +122,9 @@ namespace '/metro_delay_now/api/v1' do
 
           if current_time - planned_time > 60
             out_train[:delay] = ((current_time - planned_time) / 60).to_i
+            out_train[:delay] = [0, out_train[:delay]-1440].max if out_train[:delay] > 1080 # 23:53で00:00発予定
+          elsif current_time - planned_time < -1080*60
+            out_train[:delay] = (((current_time - planned_time) / 60) + 1440).to_i # 00:05で23:53発予定
           else
             out_train[:delay] = 0
           end
