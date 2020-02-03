@@ -107,6 +107,8 @@ namespace '/metro_delay_now/api/v1' do
         direction: train["odpt:railDirection"],
         current: train["odpt:fromStation"],
         next: train["odpt:toStation"],
+        delay: train["odpt:delay"] / 60 || 0,
+        delay_method: "Official"
         # timetable: timetables[day_of][train["owl:sameAs"]]
       }.tap { |out_train|
         if timetable = timetables.dig(day_of, train["owl:sameAs"])
@@ -114,7 +116,6 @@ namespace '/metro_delay_now/api/v1' do
           current_time = train["dc:date"]
           planned_time = timetable.dig("dept_stops", out_train[:next] || out_train[:current])
           if !current_time || !planned_time
-            out_train[:delay] = nil
             break out_train
           end
 
@@ -122,11 +123,14 @@ namespace '/metro_delay_now/api/v1' do
           planned_time = Time.parse(planned_time)
 
           if current_time - planned_time > 60
+            out_train[:delay_method] = "Estimate"
             out_train[:delay] = ((current_time - planned_time) / 60).to_i
             out_train[:delay] = [0, out_train[:delay]-1440].max if out_train[:delay] > 1080 # 23:53で00:00発予定
           elsif current_time - planned_time < -1080*60
+            out_train[:delay_method] = "Estimate"
             out_train[:delay] = (((current_time - planned_time) / 60) + 1440).to_i # 00:05で23:53発予定
           else
+            out_train[:delay_method] = "Estimate"
             out_train[:delay] = 0
           end
 
