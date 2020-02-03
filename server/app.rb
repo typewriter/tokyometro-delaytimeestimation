@@ -114,7 +114,8 @@ namespace '/metro_delay_now/api/v1' do
         if timetable = timetables.dig(day_of, train["owl:sameAs"])
           # 発車済の場合は次駅時間、未発車の場合は当駅時間で
           current_time = train["dc:date"]
-          planned_time = timetable.dig("dept_stops", out_train[:next] || out_train[:current])
+          planned_time = timetable.dig("dept_stops", out_train[:next] || out_train[:current]) ||
+                         timetable.dig("arr_stops", out_train[:next])
           if !current_time || !planned_time
             break out_train
           end

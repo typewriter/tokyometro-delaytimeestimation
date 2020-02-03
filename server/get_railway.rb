@@ -56,9 +56,9 @@ railways.each { |railway|
       dept_stops: timetable["odpt:#{key == :weekdays ? "weekdays": "holidays"}"].map { |stop|
         [stop["odpt:departureStation"], stop["odpt:departureTime"]]
       }.reject { |stop| !stop[0] }.to_h,
-      stops: timetable["odpt:#{key == :weekdays ? "weekdays": "holidays"}"].map { |stop|
-        [stop["odpt:departureStation"] || stop["odpt:arrivalStation"], stop["odpt:departureTime"] || stop["odpt:arrivalTime"]]
-      }.to_h
+      arr_stops: timetable["odpt:#{key == :weekdays ? "weekdays": "holidays"}"].map { |stop|
+        [stop["odpt:arrivalStation"], stop["odpt:arrivalTime"]]
+      }.reject { |stop| !stop[0] }.to_h
     }
   }
 
