@@ -20,6 +20,7 @@ require "rufus-scheduler"
 #   puts 'Hello!'
 # end
 
+DELAY_CACHE = "/tmp/metro_delay.cache"
 DATA_DIR = File.dirname(__FILE__)
 LATEST_TIME = File.join(DATA_DIR, "latest.time")
 API_ENDPOINT = "https://api.tokyometroapp.jp/api/v2/datapoints"
@@ -127,6 +128,26 @@ namespace '/metro_delay_now/api/v1' do
             out_train[:delay] = (((current_time - planned_time) / 60) + 1440).to_i # 00:05で23:53発予定
           else
             out_train[:delay] = 0
+          end
+
+          # 移動中で前駅の遅延情報が残っている場合は、それを用いる
+          if out_train[:next]
+            if File.exist?(DELAY_CACHE)
+              delays = File.readlines(DELAY_CACHE)
+              select_delays = delays.select { |delay| delay.start_with?("#{out_train[:id]},#{out_train[:current]}") }
+              if !select_delays.empty?
+                out_train[:delay_method] = "EstimateWithBeforeStation"
+                out_train[:delay] = [out_train[:delay], select_delays.last.split(/,/)[2].to_i].max
+              end
+            end
+          end
+
+          if out_train[:delay] > 0 && !out_train[:next]
+            # 書き込み
+            `touch #{DELAY_CACHE}`
+            `tail -n 1000 #{DELAY_CACHE} > #{DELAY_CACHE}.tmp`
+            `echo "#{out_train[:id]},#{out_train[:current]},#{out_train[:delay]}" >> #{DELAY_CACHE}.tmp`
+            `mv #{DELAY_CACHE}.tmp #{DELAY_CACHE}`
           end
         end
       }
