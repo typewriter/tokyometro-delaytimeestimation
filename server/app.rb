@@ -125,11 +125,11 @@ namespace '/metro_delay_now/api/v1' do
 
           if current_time - planned_time > 60
             out_train[:delay_method] = "Estimate"
-            out_train[:delay] = ((current_time - planned_time) / 60).to_i
+            out_train[:delay] = [out_train[:delay], ((current_time - planned_time) / 60).to_i].max
             out_train[:delay] = [0, out_train[:delay]-1440].max if out_train[:delay] > 1080 # 23:53で00:00発予定
           elsif current_time - planned_time < -1080*60
             out_train[:delay_method] = "Estimate"
-            out_train[:delay] = (((current_time - planned_time) / 60) + 1440).to_i # 00:05で23:53発予定
+            out_train[:delay] = [out_train[:delay], (((current_time - planned_time) / 60) + 1440).to_i].max # 00:05で23:53発予定
           else
             out_train[:delay_method] = "Estimate"
             out_train[:delay] = 0
