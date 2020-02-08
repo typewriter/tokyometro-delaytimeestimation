@@ -36,6 +36,11 @@ def timetables(id)
   JSON.parse(File.read(File.join(DATA_DIR, "timetables.#{filename}.json")))
 end
 
+def traininformations(id)
+  filename = id.gsub(/[\\\/:*?"<>|]/, "-")
+  JSON.parse(File.read(File.join(DATA_DIR, "traininformations.#{filename}.json")))
+end
+
 def trains(id)
   filename = id.gsub(/[\\\/:*?"<>|]/, "-")
   filepath = File.join(DATA_DIR, "trains.#{filename}.json")
@@ -80,6 +85,25 @@ def trains(id)
         tempfile.write JSON.generate(railway_json)
         tempfile.close
         FileUtils.mv(tempfile.path, File.join(DATA_DIR, "trains.#{railway_filename}.json"))
+      }
+    rescue
+
+    end
+
+    body = Net::HTTP.get(URI.parse("#{API_ENDPOINT}?rdf:type=odpt:TrainInformation&acl:consumerKey=#{CONSUMER_KEY}"))
+    force_body = nil
+    begin
+      json = JSON.parse(body)
+      force_json = nil
+
+      railways.each { |railway|
+        railway_filename = railway["railway"]["id"].gsub(/[\\\/:*?"<>|]/, "-")
+        railway_json = json.select { |train| train["odpt:railway"] == railway["railway"]["id"] }&.first
+
+        tempfile = Tempfile.create
+        tempfile.write JSON.generate(railway_json)
+        tempfile.close
+        FileUtils.mv(tempfile.path, File.join(DATA_DIR, "traininformations.#{railway_filename}.json"))
       }
     rescue
 
@@ -168,7 +192,7 @@ namespace '/metro_delay_now/api/v1' do
       }
     }
 
-    json({ date: trains.dig(0, "dc:date"), trains: out_trains })
+    json({ date: trains.dig(0, "dc:date"), trains: out_trains, information: traininformations(params[:id])&.dig("odpt:trainInformationText") })
   end
 
   get '/' do
