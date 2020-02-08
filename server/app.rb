@@ -24,6 +24,7 @@ DELAY_CACHE = "/tmp/metro_delay.cache"
 DATA_DIR = File.dirname(__FILE__)
 LATEST_TIME = File.join(DATA_DIR, "latest.time")
 API_ENDPOINT = "https://api.tokyometroapp.jp/api/v2/datapoints"
+FORCE_API_ENDPOINT = "https://api.tokyometroapp.jp/api/v2a/datapoints"
 CONSUMER_KEY = ENV['CONSUMER_KEY']
 
 def railways
@@ -59,12 +60,21 @@ def trains(id)
     FileUtils.touch(LATEST_TIME)
 
     body = Net::HTTP.get(URI.parse("#{API_ENDPOINT}?rdf:type=odpt:Train&acl:consumerKey=#{CONSUMER_KEY}"))
+    force_body = nil
     begin
       json = JSON.parse(body)
+      force_json = nil
 
       railways.each { |railway|
         railway_filename = railway["railway"]["id"].gsub(/[\\\/:*?"<>|]/, "-")
         railway_json = json.select { |train| train["odpt:railway"] == railway["railway"]["id"] }
+
+        if railway_json.empty?
+          STDERR.puts "Use alternative API for #{railway["railway"]["id"]}"
+          force_body = Net::HTTP.get(URI.parse("#{FORCE_API_ENDPOINT}?rdf:type=odpt:Train&acl:consumerKey=#{CONSUMER_KEY}")) if !force_body
+          force_json = JSON.parse(body) if !force_json
+          railway_json = force_json.select { |train| train["odpt:railway"] == railway["railway"]["id"] }
+        end
 
         tempfile = Tempfile.create
         tempfile.write JSON.generate(railway_json)
