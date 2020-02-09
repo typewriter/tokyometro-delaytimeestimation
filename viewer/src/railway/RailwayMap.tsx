@@ -22,6 +22,7 @@ export type RailwayProps = {
 export type TrainData = {
   date: string;
   trains: Train[];
+  information?: string;
 }
 
 type Train = {
@@ -237,11 +238,15 @@ export class RailwayMap extends React.PureComponent<RailwayProps> {
   render() {
     return (
       <div>
-        <div className="mui--appbar-line-height">
+        <div className="mui--appbar-min-height">
           <span className="mui--text-subhead">
             <span style={{ color: this.lineColor(this.props.railway.id) }}>■</span>
             { this.props.railway.name }線
             { this.props.trainData?.date ? ` (${ Moment().diff(Moment(this.props.trainData.date), 'seconds', false) }秒前の情報)` : ""}
+          </span>
+          <br />
+          <span>
+            { this.props.trainData?.information ? `${this.props.trainData.information}` : ""}
           </span>
         </div>
         { this.props.trainData ? 
