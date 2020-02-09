@@ -216,11 +216,30 @@ export class RailwayMap extends React.PureComponent<RailwayProps> {
     return "";
   }
 
+  lineColor(id: string): string {
+    let dict: any = {
+      'odpt.Railway:TokyoMetro.Ginza': '#FF9500',
+      'odpt.Railway:TokyoMetro.Marunouchi': '#F62E36',
+      'odpt.Railway:TokyoMetro.Hibiya': '#B5B5AC',
+      'odpt.Railway:TokyoMetro.Tozai': '#009BBF',
+      'odpt.Railway:TokyoMetro.Chiyoda': '#00BB85',
+      'odpt.Railway:TokyoMetro.Yurakucho': '#C1A470',
+      'odpt.Railway:TokyoMetro.Hanzomon': '#8F76D6',
+      'odpt.Railway:TokyoMetro.Namboku': '#00AC98',
+      'odpt.Railway:TokyoMetro.Fukutoshin': '#9C5E31',
+    };
+
+    return (
+      dict[id] || '#FFFFFF'
+    );
+  }
+
   render() {
     return (
       <div>
         <div className="mui--appbar-line-height">
           <span className="mui--text-subhead">
+            <span style={{ color: this.lineColor(this.props.railway.id) }}>■</span>
             { this.props.railway.name }線
             { this.props.trainData?.date ? ` (${ Moment().diff(Moment(this.props.trainData.date), 'seconds', false) }秒前の情報)` : ""}
           </span>
