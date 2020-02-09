@@ -158,7 +158,7 @@ namespace '/metro_delay_now/api/v1' do
         direction: train["odpt:railDirection"],
         current: train["odpt:fromStation"],
         next: train["odpt:toStation"],
-        delay: train["odpt:delay"] / 60 || 0,
+        delay: (train["odpt:delay"] || 0) / 60,
         delay_method: "Official"
         # timetable: timetables[day_of][train["owl:sameAs"]]
       }.tap { |out_train|
