@@ -149,6 +149,14 @@ namespace '/metro_delay_now/api/v1' do
     timetables = timetables(params[:id])
     trains = trains(params[:id])
 
+    delay_path = "#{DELAY_CACHE}.#{params[:id].gsub(/[\\\/:*?"<>|]/, "-")}"
+    delays = []
+    if File.exist?(delay_path)
+      delays = File.readlines(delay_path)
+    end
+
+    append_delays = []
+
     out_trains = trains.map { |train|
       {
         id: train["owl:sameAs"],
@@ -188,26 +196,30 @@ namespace '/metro_delay_now/api/v1' do
 
           # 移動中で前駅の遅延情報が残っている場合は、それを用いる
           if out_train[:next]
-            if File.exist?(DELAY_CACHE)
-              delays = File.readlines(DELAY_CACHE)
-              select_delays = delays.select { |delay| delay.start_with?("#{out_train[:id]},#{out_train[:current]}") }
-              if !select_delays.empty?
-                out_train[:delay_method] = "EstimateWithBeforeStation"
-                out_train[:delay] = [out_train[:delay], select_delays.last.split(/,/)[2].to_i].max
-              end
+            search_string = "#{out_train[:id]},#{out_train[:current]}"
+            delay_data = delays.select { |delay| delay.start_with?(search_string) }
+            if !delay_data.empty?
+              out_train[:delay_method] = "EstimateWithBeforeStation"
+              out_train[:delay] = [out_train[:delay], delay_data.last.split(/,/)[2].to_i].max
             end
           end
 
           if out_train[:delay] > 0 && !out_train[:next]
-            # 書き込み
-            `touch #{DELAY_CACHE}`
-            `tail -n 1000 #{DELAY_CACHE} > #{DELAY_CACHE}.tmp`
-            `echo "#{out_train[:id]},#{out_train[:current]},#{out_train[:delay]}" >> #{DELAY_CACHE}.tmp`
-            `mv #{DELAY_CACHE}.tmp #{DELAY_CACHE}`
+            append_delays << "#{out_train[:id]},#{out_train[:current]},#{out_train[:delay]}"
           end
         end
       }
     }
+
+    # 書き込み
+    if !append_delays.empty?
+      `touch #{delay_path}`
+      #`tail -n 100 #{delay_path} > #{delay_path}.tmp`
+      append_delays.each { |delay|
+        `echo "#{delay}" >> #{delay_path}.tmp`
+      }
+      `mv #{delay_path}.tmp #{delay_path}`
+    end
 
     json({ date: trains.dig(0, "dc:date"), trains: out_trains, information: traininformations(params[:id])&.dig("odpt:trainInformationText") })
   end
