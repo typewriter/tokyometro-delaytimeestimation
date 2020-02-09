@@ -1,6 +1,6 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "メトロ遅延なう",
+  "name": "メトロ遅延なう - 東京メトロの電車遅延を1分単位で推定する非公式サービス",
   "icons": [
     {
       "src": "favicon.ico",
