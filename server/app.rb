@@ -27,13 +27,23 @@ API_ENDPOINT = "https://api.tokyometroapp.jp/api/v2/datapoints"
 FORCE_API_ENDPOINT = "https://api.tokyometroapp.jp/api/v2a/datapoints"
 CONSUMER_KEY = ENV['CONSUMER_KEY']
 
-def railways
+$timetables = {}
+Dir::glob("./timetables.*.json") { |filename|
+  $timetables[File.basename(filename)] =
+    JSON.parse(File.read(File.join(DATA_DIR, filename)))
+}
+
+$railways =
   JSON.parse(File.read(File.join(DATA_DIR, "railways.json"))).reject { |railway| railway["railway"]["id"] =~ /MarunouchiBranch/ }
+
+def railways
+  $railways
 end
 
 def timetables(id)
   filename = id.gsub(/[\\\/:*?"<>|]/, "-")
-  JSON.parse(File.read(File.join(DATA_DIR, "timetables.#{filename}.json")))
+  $timetables["timetables.#{filename}.json"]
+  #JSON.parse(File.read(File.join(DATA_DIR, "timetables.#{filename}.json")))
 end
 
 def traininformations(id)
@@ -64,50 +74,57 @@ def trains(id)
   if is_need_to_update && (!File.exist?(LATEST_TIME) || Time.now - File.mtime(LATEST_TIME) > 15)
     FileUtils.touch(LATEST_TIME)
 
-    body = Net::HTTP.get(URI.parse("#{API_ENDPOINT}?rdf:type=odpt:Train&acl:consumerKey=#{CONSUMER_KEY}"))
-    force_body = nil
-    begin
-      json = JSON.parse(body)
-      force_json = nil
+    t = Thread.new do 
+      body = Net::HTTP.get(URI.parse("#{API_ENDPOINT}?rdf:type=odpt:Train&acl:consumerKey=#{CONSUMER_KEY}"))
+      force_body = nil
+      begin
+        json = JSON.parse(body)
+        force_json = nil
 
-      railways.each { |railway|
-        railway_filename = railway["railway"]["id"].gsub(/[\\\/:*?"<>|]/, "-")
-        railway_json = json.select { |train| train["odpt:railway"] == railway["railway"]["id"] }
+        railways.each { |railway|
+          railway_filename = railway["railway"]["id"].gsub(/[\\\/:*?"<>|]/, "-")
+          railway_json = json.select { |train| train["odpt:railway"] == railway["railway"]["id"] }
 
-        if railway_json.empty?
-          STDERR.puts "Use alternative API for #{railway["railway"]["id"]}"
-          force_body = Net::HTTP.get(URI.parse("#{FORCE_API_ENDPOINT}?rdf:type=odpt:Train&acl:consumerKey=#{CONSUMER_KEY}")) if !force_body
-          force_json = JSON.parse(body) if !force_json
-          railway_json = force_json.select { |train| train["odpt:railway"] == railway["railway"]["id"] }
-        end
+          if railway_json.empty?
+            STDERR.puts "Use alternative API for #{railway["railway"]["id"]}"
+            force_body = Net::HTTP.get(URI.parse("#{FORCE_API_ENDPOINT}?rdf:type=odpt:Train&acl:consumerKey=#{CONSUMER_KEY}")) if !force_body
+            force_json = JSON.parse(body) if !force_json
+            railway_json = force_json.select { |train| train["odpt:railway"] == railway["railway"]["id"] }
+          end
 
-        tempfile = Tempfile.create
-        tempfile.write JSON.generate(railway_json)
-        tempfile.close
-        FileUtils.mv(tempfile.path, File.join(DATA_DIR, "trains.#{railway_filename}.json"))
-      }
-    rescue
+          tempfile = Tempfile.create
+          tempfile.write JSON.generate(railway_json)
+          tempfile.close
+          FileUtils.mv(tempfile.path, File.join(DATA_DIR, "trains.#{railway_filename}.json"))
+        }
+      rescue
 
+      end
     end
 
-    body = Net::HTTP.get(URI.parse("#{API_ENDPOINT}?rdf:type=odpt:TrainInformation&acl:consumerKey=#{CONSUMER_KEY}"))
-    force_body = nil
-    begin
-      json = JSON.parse(body)
-      force_json = nil
+    t2 = Thread.new do
+      info_body = Net::HTTP.get(URI.parse("#{API_ENDPOINT}?rdf:type=odpt:TrainInformation&acl:consumerKey=#{CONSUMER_KEY}"))
+      force_info_body = nil
+      begin
+        info_json = JSON.parse(info_body)
+        force_info_json = nil
 
-      railways.each { |railway|
-        railway_filename = railway["railway"]["id"].gsub(/[\\\/:*?"<>|]/, "-")
-        railway_json = json.select { |train| train["odpt:railway"] == railway["railway"]["id"] }&.first
+        railways.each { |railway|
+          info_railway_filename = railway["railway"]["id"].gsub(/[\\\/:*?"<>|]/, "-")
+          railway_info_json = info_json.select { |train| train["odpt:railway"] == railway["railway"]["id"] }&.first
 
-        tempfile = Tempfile.create
-        tempfile.write JSON.generate(railway_json)
-        tempfile.close
-        FileUtils.mv(tempfile.path, File.join(DATA_DIR, "traininformations.#{railway_filename}.json"))
-      }
-    rescue
+          info_tempfile = Tempfile.create
+          info_tempfile.write JSON.generate(railway_info_json)
+          info_tempfile.close
+          FileUtils.mv(info_tempfile.path, File.join(DATA_DIR, "traininformations.#{info_railway_filename}.json"))
+        }
+      rescue
 
+      end
     end
+
+    t.join
+    t2.join
   end
 
   begin
