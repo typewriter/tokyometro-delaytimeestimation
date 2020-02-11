@@ -34,12 +34,10 @@ export class RailwayList extends React.PureComponent<RailwayListProps> {
       <div>
         { 
           this.props.railways.map((railway) => 
-            <div className="mui--pull-left">
-              <div className="mui--divider-left mui--bg-primary-dark mui--z1" style={{ cursor: "pointer" }} onClick={ () => this.railwayClick(railway.railway.id) } >
-                &nbsp;
+            <div className="mui--pull-left" style={{ padding: "5px 5px" }}>
+              <div className="mui--bg-primary-dark mui--z1" style={{ cursor: "pointer" }} onClick={ () => this.railwayClick(railway.railway.id) } >
                 <span style={{ color: this.lineColor(railway.railway.id) }}>■</span>
                 { railway.railway.name }線
-                &nbsp;
                 </div>
             </div>
           )
