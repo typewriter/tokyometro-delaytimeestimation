@@ -97,12 +97,14 @@ def trains(id)
           tempfile.close
           FileUtils.mv(tempfile.path, File.join(DATA_DIR, "trains.#{railway_filename}.json"))
         }
-      rescue
+      rescue => e
+        STDERR.puts e.inspect
 
       end
     end
 
     t2 = Thread.new do
+      sleep (1+rand*5)
       info_body = Net::HTTP.get(URI.parse("#{API_ENDPOINT}?rdf:type=odpt:TrainInformation&acl:consumerKey=#{CONSUMER_KEY}"))
       force_info_body = nil
       begin
@@ -118,13 +120,12 @@ def trains(id)
           info_tempfile.close
           FileUtils.mv(info_tempfile.path, File.join(DATA_DIR, "traininformations.#{info_railway_filename}.json"))
         }
-      rescue
-
+      rescue => e
+        STDERR.puts e.inspect
       end
     end
 
     t.join
-    t2.join
   end
 
   begin
