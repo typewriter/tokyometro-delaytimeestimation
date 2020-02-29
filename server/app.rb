@@ -205,7 +205,7 @@ namespace '/metro_delay_now/api/v1' do
             end
           end
 
-          if out_train[:delay] > 0 && !out_train[:next]
+          if out_train[:delay] > 0 #&& !out_train[:next]
             append_delays << "#{out_train[:id]},#{out_train[:current]},#{out_train[:delay]}"
           end
         end
