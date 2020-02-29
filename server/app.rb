@@ -4,6 +4,7 @@ require "sinatra"
 require "sinatra/json"
 require "sinatra/namespace"
 
+require "rufus-scheduler"
 require "holiday_japan"
 
 require "net/http"
@@ -13,12 +14,7 @@ require "fileutils"
 require "time"
 require "date"
 
-require "rufus-scheduler"
-
-# scheduler = Rufus::Scheduler.new
-# scheduler.every '3s' do
-#   puts 'Hello!'
-# end
+require "./get_railway.rb"
 
 DELAY_CACHE = "/tmp/metro_delay.cache"
 DATA_DIR = File.dirname(__FILE__)
@@ -28,13 +24,26 @@ FORCE_API_ENDPOINT = "https://api.tokyometroapp.jp/api/v2a/datapoints"
 CONSUMER_KEY = ENV['CONSUMER_KEY']
 
 $timetables = {}
-Dir::glob("./timetables.*.json") { |filename|
-  $timetables[File.basename(filename)] =
-    JSON.parse(File.read(File.join(DATA_DIR, filename)))
-}
+$railways = []
 
-$railways =
-  JSON.parse(File.read(File.join(DATA_DIR, "railways.json"))).reject { |railway| railway["railway"]["id"] =~ /MarunouchiBranch/ }
+def load_railway
+  GetRailway.run
+
+  Dir::glob("./timetables.*.json") { |filename|
+    $timetables[File.basename(filename)] =
+      JSON.parse(File.read(File.join(DATA_DIR, filename)))
+  }
+
+  $railways =
+    JSON.parse(File.read(File.join(DATA_DIR, "railways.json"))).reject { |railway| railway["railway"]["id"] =~ /MarunouchiBranch/ }
+end
+
+load_railway
+
+scheduler = Rufus::Scheduler.new
+scheduler.cron '5 4 * * *' do
+  load_railway
+end
 
 def railways
   $railways
@@ -48,7 +57,11 @@ end
 
 def traininformations(id)
   filename = id.gsub(/[\\\/:*?"<>|]/, "-")
-  JSON.parse(File.read(File.join(DATA_DIR, "traininformations.#{filename}.json")))
+  if File.exist?(File.join(DATA_DIR, "traininformations.#{filename}.json"))
+    JSON.parse(File.read(File.join(DATA_DIR, "traininformations.#{filename}.json")))
+  else
+    {}
+  end
 end
 
 def trains(id)

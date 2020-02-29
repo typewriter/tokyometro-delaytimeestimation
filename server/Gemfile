@@ -4,11 +4,8 @@ source "https://rubygems.org"
 
 git_source(:github) {|repo_name| "https://github.com/#{repo_name}" }
 
-gem "unicorn"
-
 gem "sinatra"
 gem "sinatra-contrib"
 
 gem "rufus-scheduler"
-
 gem "holiday_japan"
