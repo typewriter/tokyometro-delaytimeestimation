@@ -12,6 +12,7 @@ class GetRailway
     data_dir = File.dirname(__FILE__)
 
     ## 路線・駅情報の集約
+    STDERR.puts "Get station"
     json = Net::HTTP.get(URI.parse("#{API_ENDPOINT}?rdf:type=odpt:Station&acl:consumerKey=#{CONSUMER_KEY}"))
     stations = JSON.parse(json)
     station_map = stations.map { |station|
@@ -20,6 +21,7 @@ class GetRailway
 
     sleep 10
 
+    STDERR.puts "Get railway"
     json = Net::HTTP.get(URI.parse("#{API_ENDPOINT}?rdf:type=odpt:Railway&acl:consumerKey=#{CONSUMER_KEY}"))
     railways = JSON.parse(json)
     railways = railways.map { |railway|
@@ -40,6 +42,7 @@ class GetRailway
 
     ## 時刻表の取得
     railways.each { |railway|
+      STDERR.puts "Get timetable (#{railway["railway"]["id"]})"
       sleep 10
       json = Net::HTTP.get(URI.parse("#{API_ENDPOINT}?rdf:type=odpt:TrainTimetable&acl:consumerKey=#{CONSUMER_KEY}&odpt:railway=#{railway["railway"]["id"]}"))
       timetables = JSON.parse(json)
