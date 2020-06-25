@@ -13,7 +13,7 @@ GEM
     mustermann (1.1.1)
       ruby2_keywords (~> 0.0.1)
     raabro (1.1.6)
-    rack (2.1.2)
+    rack (2.2.3)
     rack-protection (2.0.8.1)
       rack
     ruby2_keywords (0.0.2)
