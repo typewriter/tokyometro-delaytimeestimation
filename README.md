@@ -1,5 +1,7 @@
 # tokyometro-delaytimeestimation
 
+⚠ 東京メトロオープンデータ API の提供が 2022/03/31 をもって終了したため、本サービスも終了しました。
+
 Minute train delay estimation service using Tokyo Metro open data API.
 
 東京メトロオープンデータ API を用いた 1 分単位の電車遅延推定サービスです。
